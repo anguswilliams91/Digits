@@ -10,7 +10,8 @@ from sklearn.preprocessing import OneHotEncoder
 
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils.np_utils import to_categorical
+
 
 def visualise_image(ind,df):
 
@@ -115,7 +116,42 @@ def fit_linear_svm(X,y):
 
     return gs
 
+def fit_simple_neural_network(X,y):
 
+    """
+    Fit a simple neural network to the data. This seems able to achieve 
+    ~ 99 percent accuracy.
 
+    Arguments
+    ---------
+
+    X: numpy.array
+        feature matrix 
+
+    y: numpy.array
+        training labels
+
+    Returns
+    -------
+
+    data: keras.callbacks.History
+        keras history object from training
+
+    model: keras.models.Sequential
+        the neural network model 
+
+    """
+
+    y_ohe = to_categorical(y)
+
+    model=Sequential()
+    model.add(Dense(32,activation='relu',input_dim=X.shape[1]))
+    model.add(Dense(16,activation='relu'))
+    model.add(Dense(10,activation='softmax'))
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    data=model.fit(X, y_ohe, validation_split = 0.1, epochs=30, batch_size=64)
+
+    return data,model
 
 
