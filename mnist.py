@@ -9,7 +9,8 @@ from sklearn.svm import LinearSVC
 from sklearn.preprocessing import OneHotEncoder
 
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import Conv2D, MaxPooling2D
 from keras.utils.np_utils import to_categorical
 
 
@@ -120,7 +121,7 @@ def fit_simple_neural_network(X,y):
 
     """
     Fit a simple neural network to the data. This seems able to achieve 
-    ~ 99 percent accuracy.
+    ~ 96 percent accuracy.
 
     Arguments
     ---------
@@ -150,8 +151,67 @@ def fit_simple_neural_network(X,y):
     model.add(Dense(10,activation='softmax'))
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-    data=model.fit(X, y_ohe, validation_split = 0.1, epochs=30, batch_size=64)
+    data=model.fit(X, y_ohe, validation_split = 0.1, epochs=50, batch_size=64)
 
     return data,model
+
+def fit_convolutional_neural_network(X,y):
+
+    """
+    Fit a convolutional neural network to the data. This seems able to achieve ~ 99 percent 
+    accuracy.
+
+    Arguments
+    ---------
+
+    X: numpy.array
+        feature matrix 
+
+    y: numpy.array
+        training labels
+
+    Returns
+    -------
+
+    data: keras.callbacks.History
+        keras history object from training
+
+    model: keras.models.Sequential
+        the neural network model 
+
+    """
+
+
+    y_ohe = to_categorical(y)
+    X = X.reshape(X.shape[0],1,28,28)
+
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(1,28,28),data_format="channels_first"))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2,2)))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(10, activation='softmax'))
+    model.compile( optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'] )
+
+    data = model.fit(X, y_ohe, validation_split=0.1, epochs=15, batch_size=32)
+
+    return data,model
+
+def main():
+    np.random.seed(130)
+    X_train,X_test,y_train = load_and_preprocess()
+    data,model = fit_convolutional_neural_network(X_train,y_train)
+    y_test = model.predict_classes( X_test.reshape(X_test.shape[0],1,28,28) )
+    inds = np.arange(1,X_test.shape[0]+1).astype(int)
+    submit = pd.DataFrame({'ImageId': inds, 'Label': y_test})
+    submit.to_csv("data/submit.csv",index=False)
+
+if __name__ == "__main__":
+    main()
 
 
